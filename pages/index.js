@@ -29,6 +29,27 @@ function ProfileSidebar({ githubUser }){
   )  
 }
 
+function ProfileRelationsBox(props){
+  return (
+    <ProfileRelationsBoxWrapper>
+      <h2 className="smallTitle">
+        {props.title} ({props.itens.length})</h2>
+      <ul>
+        {props.itens.map((item) => {
+          return (
+            <li key={item}>
+              <a href={`https://github.com/${item.login}`}>
+                <img src={`https://github.com/${item.login}.png`}/>
+                <span>{item.login}</span>
+              </a>
+            </li>
+          )
+        })}
+      </ul>
+    </ProfileRelationsBoxWrapper>  
+  )
+}
+
 export default function Home() {
   
   const githubUser = 'juliangn';
@@ -43,7 +64,20 @@ export default function Home() {
   'brunomalvestuto',
   'robertokl',
   'omariosouto',
-  'marcobrunodev']
+  'marcobrunodev',
+];
+
+const [seguidores, setSeguidores] = React.useState([]);
+React.useEffect(() => {
+  fetch('https://api.github.com/users/juliangn/followers')
+  .then(serverResponse => {
+    return serverResponse.json();
+  }).then(finalResponse => {
+    setSeguidores(finalResponse) // insere a informação capturada no seguidores, com o setSeguidores
+    console.log(seguidores)
+  });
+}, []) // array vazio como segundo parâmetro do useEffect, faz com que ele rode apenas uma vez
+
 
   return (
     <> 
@@ -92,7 +126,10 @@ export default function Home() {
           </Box>
         </div>
         <div className="profileRelationsArea" style={{gridArea:'profileRelationsArea'}}>
+        <ProfileRelationsBox title={'Seguidores'} itens={seguidores}/>
+        {/* <ProfileRelationsBox title={'Comunidades'} itens={comunidades}/> */}
         <ProfileRelationsBoxWrapper>
+         
             <h2 className="smallTitle">Comunidades ({comunidades.length})</h2>
             <ul>
               {comunidades.map((com) => {
@@ -106,7 +143,8 @@ export default function Home() {
                 )
               })}
             </ul>
-          </ProfileRelationsBoxWrapper>     
+          </ProfileRelationsBoxWrapper> 
+          {/* <ProfileRelationsBox title={'Pessoas da comunidade'} itens={pessoasFavoritas}/>     */}
           <ProfileRelationsBoxWrapper>
             <h2 className="smallTitle">Pessoas da comunidade ({pessoasFavoritas.length})</h2>
             <ul>
