@@ -2,7 +2,7 @@ import React from 'react';
 import MainGrid from '../src/components/MainGrid';
 import Box from '../src/components/Box';
 import {AlurakutMenu, AlurakutProfileSidebarMenuDefault, OrkutNostalgicIconSet} from '../src/lib/AlurakutCommons'
-import {ProfileRelationsBoxWrapper} from '../src/components/ProfileRelations'
+import {ProfileRelationsBoxWrapper} from '../src/components/ProfileRelations';
 
 // const Title = styled.h1`
 //   font-size: 50px;
@@ -53,11 +53,7 @@ function ProfileRelationsBox(props){
 export default function Home() {
   
   const githubUser = 'juliangn';
-  const [comunidades, setComunidades] = React.useState([{
-    id: '123456', // sera substituído na inserção
-    title: 'Eu odeio acordar cedo',
-    image: 'https://alurakut.vercel.app/capa-comunidade-01.jpg'
-  }]); //destructuring
+  const [comunidades, setComunidades] = React.useState([]); //destructuring
   const pessoasFavoritas = [
   'rafaelcmpereira',
   'FelipeCardoso89',
@@ -74,8 +70,30 @@ React.useEffect(() => {
     return serverResponse.json();
   }).then(finalResponse => {
     setSeguidores(finalResponse) // insere a informação capturada no seguidores, com o setSeguidores
-    console.log(seguidores)
   });
+
+  // API GraphQL
+  fetch('https://graphql.datocms.com/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': `3481e7e55e4d53be055a38e3b50a47`,
+    },
+    body: JSON.stringify({"query": `query {
+      allCommunities {
+        id
+        title
+        imageUrl
+        creatorSlug
+      }
+    }`})   
+  })
+  .then(response => response.json())
+  .then(finalResponse => {
+    const comunidadesCMS = finalResponse.data.allCommunities;
+    setComunidades(comunidadesCMS)
+  })
 }, []) // array vazio como segundo parâmetro do useEffect, faz com que ele rode apenas uma vez
 
 
@@ -100,12 +118,26 @@ React.useEffect(() => {
               const dadosDoForm = new FormData(e.target); //captura em um objeto o que foi inserido no formulário
 
               const comunidade = {
-                id: new Date().toISOString(), //algo que seja único, para diferenciar cada item
                 title: dadosDoForm.get('title'),
-                image: dadosDoForm.get('image'),
+                imageUrl: dadosDoForm.get('image'),
+                creatorSlug: githubUser, 
               }
-              const comunidadesAtualizadas = [...comunidades, comunidade];
-              setComunidades(comunidadesAtualizadas);
+
+              fetch('/api/comunidades',{
+                method: 'POST',
+                headers:{
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(comunidade),
+              })
+              .then(async (response) => {
+                const dados = await response.json();
+                const comunidade = dados.registroCriado;
+                const comunidadesAtualizadas = [...comunidades, comunidade];
+                setComunidades(comunidadesAtualizadas)
+              })
+
+
             }}>
               <div>
                 <input placeholder="Qual vai ser o nome da sua comunidade?"
@@ -135,8 +167,8 @@ React.useEffect(() => {
               {comunidades.map((com) => {
                 return (
                   <li key={com.id}>
-                    <a href={`/users/${com.title}`} key={com.title}>
-                      <img src={com.image}/>
+                    <a href={`/communities/${com.title}`} key={com.id}>
+                      <img src={com.imageUrl}/>
                       <span>{com.title}</span>
                     </a>
                   </li>
