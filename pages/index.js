@@ -1,4 +1,6 @@
 import React from 'react';
+import nookies from 'nookies';
+import jwt from 'jsonwebtoken'; // decodificador da api
 import MainGrid from '../src/components/MainGrid';
 import Box from '../src/components/Box';
 import {AlurakutMenu, AlurakutProfileSidebarMenuDefault, OrkutNostalgicIconSet} from '../src/lib/AlurakutCommons'
@@ -50,9 +52,9 @@ function ProfileRelationsBox(props){
   )
 }
 
-export default function Home() {
+export default function Home(props) {
   
-  const githubUser = 'juliangn';
+  const githubUser = props.githubUser;
   const [comunidades, setComunidades] = React.useState([]); //destructuring
   const pessoasFavoritas = [
   'rafaelcmpereira',
@@ -196,4 +198,36 @@ React.useEffect(() => {
       </MainGrid>
     </>
   )
+}
+
+// Maneira que o next.js permite ou não o carregamento da página caso o usuário esteja logado
+export async function getServerSideProps(context){
+  const cookies = nookies.get(context);
+  const token = cookies.USER_TOKEN;
+  
+  // é possível guardar o isAuthenticated (true/false) porque tem o await no fetch
+  const { isAuthenticated } = await fetch('https://alurakut.vercel.app/api/auth', {
+    headers: {
+      Authorization: token
+    }
+  })
+  .then(response => response.json())
+
+  if(!isAuthenticated){
+    return {
+      redirect: {
+        destination: '/login', // se não estiver autenticado, volta para o login
+        permanent: false,
+      }
+    }
+  }
+  
+  const { githubUser } = jwt.decode(token); // cria uma variável githubUser a partir da chave que ele encontrar com o mesmo nome
+  
+
+  return{
+    props: {
+      githubUser, // inserir aqui o usuário a partir do cookie
+    }
+  }
 }
